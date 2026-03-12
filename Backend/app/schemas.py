@@ -18,7 +18,7 @@ class UserCreate(BaseModel):
     """
     name: str
     mobile: str
-    email: EmailStr
+    email: str
     password: str
 
 
