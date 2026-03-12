@@ -1,3 +1,7 @@
+'''ORM module that models database as python objects for logic handling
+Each class corresponds to a table in the SQL database'''
+
+
 from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, ForeignKey, DECIMAL, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship

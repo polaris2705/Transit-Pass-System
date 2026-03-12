@@ -1,3 +1,6 @@
+'''Database connection layer that creates a Base for database models.'''
+
+
 # connect API server and database
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -16,4 +19,5 @@ SessionLocal = sessionmaker(
     bind=engine
 )
 
+# serves as super class for our modeled table classes. Parent class
 Base = declarative_base()
