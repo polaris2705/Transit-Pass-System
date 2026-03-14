@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
+
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from fastapi import HTTPException
 
 from app import models, schemas
@@ -14,17 +16,18 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest):
         models.UserPass.pass_code == request.pass_code
     ).first()
 
+    # check if user pass exists
     if not user_pass:
         return {"valid": False, "message": "Pass not found","expiry_date": None, "trip": None}
 
-    # status check
+    #  check valid pass status
     if user_pass.status != "Active":
         return {"valid": False, "message": "Pass inactive","expiry_date": user_pass.expiry_date, "trip": None}
 
     #if user_pass.expiry_date < datetime.now(timezone.utc):
     #    return {"valid": False, "message": "Pass expired","expiry_date":user_pass.expiry_date, "trip": None}
 
-
+    # check valid pass expiry
     expiry = user_pass.expiry_date
 
     if expiry.tzinfo is None:
@@ -39,9 +42,11 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest):
         }
     pass_type = user_pass.pass_type
 
-    # transport mode check
+    # check valid transport mode
     if pass_type.transport_modes:
-        allowed_modes = pass_type.transport_modes.split(",")
+        #allowed_modes = pass_type.transport_modes.split(",")
+        # just ensuring safer response
+        allowed_modes = [mode.strip() for mode in pass_type.transport_modes.split(",")]
 
         if request.transport_mode not in allowed_modes:
             return {"valid": False, "message": "Transport mode not allowed","expiry_date": user_pass.expiry_date, "trip": None}
@@ -68,6 +73,25 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest):
                 "trip": None
             }
 
+    # enforce trip limit
+    if pass_type.max_trips_per_day:
+
+        today = now.date()
+
+        trip_count = db.query(models.Trip).filter(
+            models.Trip.user_pass_id == user_pass.id,
+            func.date(models.Trip.validated_at) == today
+        ).count()
+
+        if trip_count >= pass_type.max_trips_per_day:
+            return {
+                "valid": False,
+                "message": "Daily trip limit reached",
+                "expiry_date": user_pass.expiry_date,
+                "trip": None
+            }
+
+    # create trip record
     new_trip = models.Trip(
         user_pass_id=user_pass.id,
         validated_by=1,
@@ -83,10 +107,26 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest):
     return {"valid": True, "message": "Pass validated","expiry_date": user_pass.expiry_date, "trip": new_trip}
 
 
-def get_trip_history(db: Session):
+def get_trip_history(db: Session, start_date=None, end_date=None):
 
-    return db.query(models.Trip).join(
-        models.UserPass
-    ).filter(
+    #return db.query(models.Trip).join(
+    #    models.UserPass
+    #).filter(
+    #    models.UserPass.user_id == 1
+    #).all()
+
+    query = db.query(
+        models.Trip.transport_mode,
+        models.Trip.route_info,
+        models.Trip.validated_at
+    ).join(models.UserPass).filter(
         models.UserPass.user_id == 1
-    ).all()
+    )
+
+    if start_date:
+        query = query.filter(models.Trip.validated_at >= start_date)
+
+    if end_date:
+        query = query.filter(models.Trip.validated_at <= end_date)
+
+    return query.order_by(models.Trip.validated_at.desc()).all()

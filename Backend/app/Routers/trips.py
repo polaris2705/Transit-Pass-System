@@ -16,6 +16,14 @@ def get_db():
         db.close()
 
 
+# @router.get("/history", response_model=list[schemas.JourneyHistoryResponse])
+# def get_trip_history(db: Session = Depends(get_db)):
+#     return trip_service.get_trip_history(db)
+
 @router.get("/history", response_model=list[schemas.JourneyHistoryResponse])
-def get_trip_history(db: Session = Depends(get_db)):
-    return trip_service.get_trip_history(db)
+def get_trip_history(
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    db: Session = Depends(get_db)
+):
+    return trip_service.get_trip_history(db, start_date, end_date)

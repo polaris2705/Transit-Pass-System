@@ -29,3 +29,8 @@ def purchase_pass(request: schemas.PassPurchaseRequest, db: Session = Depends(ge
 @router.get("/my-passes", response_model=list[schemas.UserPassResponse])
 def get_user_passes(db: Session = Depends(get_db)):
     return pass_service.get_user_passes(db)
+
+# will be used for lookup via QR code
+@router.get("/{pass_code}", response_model=schemas.PassResponse)
+def get_pass(pass_code: str, db: Session = Depends(get_db)):
+    return pass_service.get_pass_by_code(pass_code, db)

@@ -25,10 +25,6 @@ def purchase_pass(db: Session, request: schemas.PassPurchaseRequest):
     now = datetime.now(timezone.utc)
     expiry = now + timedelta(days=pass_type.validity_days)
 
-    print(datetime.now(timezone.utc))
-    print(timedelta(days=pass_type.validity_days))
-    print(f'expiry: {expiry}')
-
     pass_code = str(uuid.uuid4())
 
     new_pass = models.UserPass(
@@ -52,3 +48,15 @@ def get_user_passes(db: Session):
     return db.query(models.UserPass).filter(
         models.UserPass.user_id == 1
     ).all()
+
+
+def get_pass_by_code(pass_code: str, db: Session):
+
+    user_pass = db.query(models.UserPass).filter(
+        models.UserPass.pass_code == pass_code
+    ).first()
+
+    if not user_pass:
+        raise HTTPException(status_code=404, detail="Pass not found")
+
+    return user_pass
