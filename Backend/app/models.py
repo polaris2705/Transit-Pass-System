@@ -2,9 +2,10 @@
 Each class corresponds to a table in the SQL database'''
 
 
-from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, ForeignKey, DECIMAL, Enum
+from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, ForeignKey, DECIMAL, Enum, DateTime
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
+from datetime import datetime, timezone
 from app.database import Base
 
 
@@ -17,7 +18,7 @@ class User(Base):
     email = Column(String(255), unique=True)
     password_hash = Column(String(255), nullable=False)
     role = Column(Enum("Commuter", "Validator", "Admin"), nullable=False)
-    created_at = Column(TIMESTAMP, server_default=func.now())
+    created_at = Column(DateTime(timezone=True))
 
     passes = relationship("UserPass", back_populates="user")
 
@@ -50,8 +51,8 @@ class UserPass(Base):
     user_id = Column(Integer, ForeignKey("Users.id"))
     pass_type_id = Column(Integer, ForeignKey("PassTypes.id"))
     pass_code = Column(String(100), unique=True)
-    purchase_date = Column(TIMESTAMP, server_default=func.now())
-    expiry_date = Column(TIMESTAMP)
+    purchase_date = Column(DateTime(timezone=True))
+    expiry_date = Column(DateTime(timezone=True))
     status = Column(String(50))
 
     user = relationship("User", back_populates="passes")
@@ -67,6 +68,6 @@ class Trip(Base):
     validated_by = Column(Integer, ForeignKey("Users.id"))
     transport_mode = Column(String(50))
     route_info = Column(Text)
-    validated_at = Column(TIMESTAMP, server_default=func.now())
+    validated_at = Column(DateTime(timezone=True))
 
     user_pass = relationship("UserPass", back_populates="trips")

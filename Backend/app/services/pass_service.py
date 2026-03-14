@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
@@ -21,7 +21,13 @@ def purchase_pass(db: Session, request: schemas.PassPurchaseRequest):
     if not pass_type:
         raise HTTPException(status_code=404, detail="Pass type not found")
 
-    expiry = datetime.utcnow() + timedelta(days=pass_type.validity_days)
+
+    now = datetime.now(timezone.utc)
+    expiry = now + timedelta(days=pass_type.validity_days)
+
+    print(datetime.now(timezone.utc))
+    print(timedelta(days=pass_type.validity_days))
+    print(f'expiry: {expiry}')
 
     pass_code = str(uuid.uuid4())
 
@@ -29,6 +35,7 @@ def purchase_pass(db: Session, request: schemas.PassPurchaseRequest):
         user_id=1,   # placeholder until authentication implemented
         pass_type_id=pass_type.id,
         pass_code=pass_code,
+        purchase_date=now,
         expiry_date=expiry,
         status="Active"
     )

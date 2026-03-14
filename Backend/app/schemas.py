@@ -140,6 +140,7 @@ class TripResponse(BaseModel):
     """
     id: int
     user_pass_id: int
+    validated_by: int
     transport_mode: str
     route_info: Optional[str]
     validated_at: datetime
@@ -176,6 +177,7 @@ class ValidationResult(BaseModel):
     """
     valid: bool
     message: str
+    expiry_date: Optional[datetime]
     trip: Optional[TripResponse]
 
 
