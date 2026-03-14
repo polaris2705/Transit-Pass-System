@@ -1,18 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-
+from app.dependencies import get_db
 from app.database import SessionLocal
 from app.services import admin_service
+from app import schemas
 
 router = APIRouter(prefix="/api/admin", tags=["Admin"])
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
 @router.get("/dashboard")
