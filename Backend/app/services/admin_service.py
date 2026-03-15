@@ -33,6 +33,10 @@ def create_pass_type(db, request):
 
     return new_type
 
+def get_pass_types(db: Session):
+
+    return db.query(models.PassType).all()
+
 
 def update_pass_type(db, pass_type_id, request):
 

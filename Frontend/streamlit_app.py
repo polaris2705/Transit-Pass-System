@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import pandas as pd
+from datetime import datetime
 
 API_URL = "http://localhost:8000"
 
@@ -157,22 +158,58 @@ if role == "Commuter":
 
         passes = response.json()
         df = pd.DataFrame(passes)
+        # date formartting
+        date_columns = ["purchase_date", "expiry_date"]
+        for col in date_columns:
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col]).dt.strftime("%d %b %Y %H:%M")
         st.table(df)
 
         #st.json(response.json())
 
     st.subheader("Journey History")
+    # Add date filters
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input("Start Date")
+    with col2:
+        end_date = st.date_input("End Date")
 
     if st.button("Load Trip History"):
 
+        # Convert dates to string in ISO format (if needed)
+        start_date_str = start_date.strftime("%Y-%m-%d") if start_date else None
+        end_date_str = end_date.strftime("%Y-%m-%d") if end_date else None
+
+        # Prepare query params
+        params = {}
+        if start_date_str:
+            params["start_date"] = start_date_str
+        if end_date_str:
+            params["end_date"] = end_date_str
+
         response = requests.get(
-            f"{API_URL}/api/trips/history",headers=headers
+            f"{API_URL}/api/trips/history",headers=headers, params=params
         )
 
-        #st.json(response.json())
-        trips = response.json()
-        df = pd.DataFrame(trips)
-        st.table(df)
+        #trips = response.json()
+        #df = pd.DataFrame(trips)
+        #st.table(df)
+        if response.status_code == 200:
+            trips = response.json()
+            if trips:
+                df = pd.DataFrame(trips)
+                # date formatting
+                date_columns = ["purchase_date", "expiry_date", "validated_at"]
+
+                for col in date_columns:
+                    if col in df.columns:
+                        df[col] = pd.to_datetime(df[col]).dt.strftime("%d %b %Y %H:%M")
+                st.table(df)
+            else:
+                st.info("No trips found for the selected date range.")
+        else:
+            st.error(f"Error loading trips: {response.status_code}")
 
 
 # Validator interface
@@ -182,10 +219,12 @@ elif role == "Validator":
 
     pass_code = st.text_input("Pass Code")
 
+    # TODO: automatic add code?
     transport_modes = {
         "Metro": "MET",
         "Bus": "BUS",
-        "Train": "TRN"
+        "Train": "TRN",
+        "One-way Bus": "OBUS"
     }
 
     selected_mode = st.selectbox(
@@ -240,19 +279,148 @@ elif role == "Admin":
 
     st.header("Admin Dashboard")
 
-    if st.button("Load Statistics"):
+    # Stats
 
-        response = requests.get(
-            f"{API_URL}/api/admin/dashboard",headers=headers
+    response = requests.get(
+        f"{API_URL}/api/admin/dashboard",headers=headers
+    )
+
+    data = response.json()
+
+    st.metric(
+        "Total Passes Sold",
+        data["total_passes_sold"]
+    )
+
+    #st.write("Validations by Mode")
+
+    #st.table(data["validations_by_mode"])
+    st.subheader("Validations by Transport Mode")
+
+    df = pd.DataFrame(data["validations_by_mode"])
+
+    st.table(df)
+
+    st.bar_chart(
+        df.set_index("transport_mode")
+    )
+
+    #ADMIN CRUD
+
+    # Admin Create Pass
+    st.subheader("Create Pass Type")
+
+    name = st.text_input("Pass Name")
+
+    validity_days = st.number_input(
+        "Validity (days)",
+        min_value=1,
+        step=1
+    )
+
+    price = st.number_input(
+        "Price",
+        min_value=0.0,
+        step=0.5
+    )
+
+    transport_modes = st.text_input(
+        "Transport Modes (comma separated)",
+        placeholder="BUS,MET"
+    )
+
+    max_trips = st.number_input(
+        "Max Trips Per Day",
+        min_value=0,
+        step=1
+    )
+
+    if st.button("Create Pass Type"):
+
+        payload = {
+            "name": name,
+            "validity_days": validity_days,
+            "price": price,
+            "transport_modes": transport_modes if transport_modes else None,
+            "max_trips_per_day": max_trips if max_trips > 0 else None
+        }
+
+        response = requests.post(
+            f"{API_URL}/api/admin/pass-types",
+            headers=headers,
+            json=payload
         )
 
-        data = response.json()
+        if response.status_code == 200:
+            st.success("Pass type created")
+            st.rerun()
+        else:
+            st.error(response.text)
 
-        st.metric(
-            "Total Passes Sold",
-            data["total_passes_sold"]
+    # Admin Read Pass Types
+    st.subheader("Existing Pass Types")
+
+    response = requests.get(
+        f"{API_URL}/api/admin/pass-types",
+        headers=headers
+    )
+
+    if response.status_code == 200:
+        pass_types = response.json()
+        df = pd.DataFrame(pass_types)
+        st.table(df)
+    else:
+        st.error("Failed to load pass types")
+
+    # Admin Update Pass Types
+    st.subheader("Update Pass Type")
+
+    pass_type_id = st.number_input("Pass Type ID", min_value=1)
+
+    new_name = st.text_input("New Name")
+    new_validity = st.number_input("Validity Days", min_value=1)
+    new_price = st.number_input("Price", min_value=0.0)
+    new_transport_modes = st.text_input("Transport Modes")
+    new_max_trips_per_day = st.number_input("Max Trips Per Day",min_value=1)
+
+    if st.button("Update Pass Type"):
+
+        payload = {
+            "name": new_name,
+            "validity_days": new_validity,
+            "price": new_price,
+            "transport_modes": new_transport_modes,
+            "max_trips_per_day": new_max_trips_per_day
+        }
+
+        response = requests.put(
+            f"{API_URL}/api/admin/pass-types/{pass_type_id}",
+            headers=headers,
+            json=payload
         )
 
-        st.write("Validations by Mode")
+        if response.status_code == 200:
+            st.success("Pass type updated")
+            st.rerun()
+        else:
+            st.error(response.text)
 
-        st.table(data["validations_by_mode"])
+
+
+    # Admin Delete Pass Types
+    st.subheader("Delete Pass Type")
+
+    delete_id = st.number_input("Pass Type ID to delete", min_value=1)
+
+    if st.button("Delete Pass Type"):
+
+        response = requests.delete(
+            f"{API_URL}/api/admin/pass-types/{delete_id}",
+            headers=headers
+        )
+
+        if response.status_code == 200:
+            st.success("Pass type deleted")
+            st.rerun()
+        else:
+            st.error(response.text)

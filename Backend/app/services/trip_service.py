@@ -33,6 +33,7 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest, validator
     if expiry.tzinfo is None:
         expiry = expiry.replace(tzinfo=timezone.utc)
 
+    # TODO: make pass status expired
     if expiry < now:
         return {
             "valid": False,
@@ -65,10 +66,10 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest, validator
         if last_time.tzinfo is None:
             last_time = last_time.replace(tzinfo=timezone.utc)
 
-        if (now - last_time) < timedelta(minutes=5):
+        if (now - last_time) < timedelta(minutes=2):
             return {
                 "valid": False,
-                "message": "Pass recently used",
+                "message": "Please wait before next validation",
                 "expiry_date": user_pass.expiry_date,
                 "trip": None
             }
