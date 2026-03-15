@@ -94,7 +94,7 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest):
     # create trip record
     new_trip = models.Trip(
         user_pass_id=user_pass.id,
-        validated_by=1,
+        validated_by=validator.id,
         transport_mode=request.transport_mode,
         route_info=request.route_info,
         validated_at = now

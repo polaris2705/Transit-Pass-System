@@ -16,10 +16,8 @@ if st.session_state.token is None:
         ["Login", "Register"]
     )
 
-    # -------------------------
-    # LOGIN
-    # -------------------------
 
+    # Login
     if auth_mode == "Login":
 
         st.header("Login")
@@ -42,17 +40,15 @@ if st.session_state.token is None:
                 data = response.json()
 
                 st.session_state.token = data["user_id"]
-
+                st.session_state.role = data["role"]
                 st.success("Login successful")
                 st.rerun()
 
             else:
                 st.error("Invalid credentials")
 
-    # -------------------------
-    # REGISTER
-    # -------------------------
 
+    # Register
     elif auth_mode == "Register":
 
         st.header("Register New User")
@@ -85,15 +81,15 @@ if st.session_state.token is None:
 
 st.title("Digital Transit Pass System")
 
-role = st.sidebar.selectbox(
-    "Select Role",
-    ["Commuter", "Validator", "Admin"]
-)
+#role = st.sidebar.selectbox(
+#    "Select Role",
+#    ["Commuter", "Validator", "Admin"]
+#)
+role = st.session_state.role
 
-# -------------------------
+
+
 # Commuter interface
-# -------------------------
-
 if role == "Commuter":
 
     st.header("Commuter Dashboard")
@@ -164,10 +160,7 @@ if role == "Commuter":
         st.table(df)
 
 
-# -------------------------
 # Validator interface
-# -------------------------
-
 elif role == "Validator":
 
     st.header("Validator Console")
@@ -218,10 +211,8 @@ elif role == "Validator":
             st.write("Validated At:", trip["validated_at"])
 
 
-# -------------------------
-# Admin interface
-# -------------------------
 
+# Admin interface
 elif role == "Admin":
 
     st.header("Admin Dashboard")

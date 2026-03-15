@@ -45,4 +45,4 @@ def login_user(db: Session, credentials: schemas.UserLogin):
     if not verify_password(credentials.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    return {"message": "Login successful", "user_id": user.id}
+    return {"user_id": user.id, "role": user.role}
