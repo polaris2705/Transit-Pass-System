@@ -24,17 +24,20 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest, validator
     if user_pass.status != "Active":
         return {"valid": False, "message": "Pass inactive","expiry_date": user_pass.expiry_date, "trip": None}
 
-    #if user_pass.expiry_date < datetime.now(timezone.utc):
-    #    return {"valid": False, "message": "Pass expired","expiry_date":user_pass.expiry_date, "trip": None}
-
     # check valid pass expiry
     expiry = user_pass.expiry_date
 
     if expiry.tzinfo is None:
         expiry = expiry.replace(tzinfo=timezone.utc)
 
-    # TODO: make pass status expired
+
     if expiry < now:
+
+        user_pass.status = "Expired"
+
+        db.commit()
+        db.refresh(user_pass)
+
         return {
             "valid": False,
             "message": "Pass expired",
@@ -45,8 +48,8 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest, validator
 
     # check valid transport mode
     if pass_type.transport_modes:
-        #allowed_modes = pass_type.transport_modes.split(",")
-        # just ensuring safer response
+
+        # ensuring safer response
         allowed_modes = [mode.strip() for mode in pass_type.transport_modes.split(",")]
 
         if request.transport_mode not in allowed_modes:
@@ -56,9 +59,6 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest, validator
     last_trip = db.query(models.Trip).filter(
         models.Trip.user_pass_id == user_pass.id
     ).order_by(models.Trip.validated_at.desc()).first()
-
-    #if last_trip and (now - last_trip.validated_at) < timedelta(minutes=5):
-    #    return {"valid": False, "message": "Pass recently used","expiry_date": user_pass.expiry_date, "trip": None}
 
     if last_trip:
         last_time = last_trip.validated_at
@@ -110,11 +110,6 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest, validator
 
 def get_trip_history(db: Session, user, start_date=None, end_date=None):
 
-    #return db.query(models.Trip).join(
-    #    models.UserPass
-    #).filter(
-    #    models.UserPass.user_id == 1
-    #).all()
 
     query = db.query(
         models.Trip.transport_mode,

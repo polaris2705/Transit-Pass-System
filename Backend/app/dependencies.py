@@ -12,31 +12,6 @@ def get_db():
         db.close()
 
 
-# def get_current_user(user_id: int, db: Session = Depends(get_db)):
-#
-#     user = db.query(models.User).filter(
-#         models.User.id == user_id
-#     ).first()
-#
-#     if not user:
-#         raise HTTPException(status_code=401, detail="Invalid user")
-#
-#     return user
-
-# def get_current_user(db: Session = Depends(get_db)):
-#
-#     # temporary placeholder until token auth implemented
-#     user_id = 1
-#
-#     user = db.query(models.User).filter(
-#         models.User.id == user_id
-#     ).first()
-#
-#     if not user:
-#         raise HTTPException(status_code=401, detail="Invalid user")
-#
-#     return user
-
 
 def get_current_user(
     x_user_id: int = Header(...),

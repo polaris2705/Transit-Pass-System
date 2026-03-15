@@ -19,5 +19,5 @@ SessionLocal = sessionmaker(
     bind=engine
 )
 
-# serves as super class for our modeled table classes. Parent class
+# super class for modeled table classes. Parent class
 Base = declarative_base()

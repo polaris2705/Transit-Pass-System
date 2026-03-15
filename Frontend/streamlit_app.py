@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 from datetime import datetime
 
+
 API_URL = "http://localhost:8000"
 
 if "token" not in st.session_state:
@@ -92,11 +93,6 @@ if st.session_state.token is None:
     st.stop()
 
 
-
-#role = st.sidebar.selectbox(
-#    "Select Role",
-#    ["Commuter", "Validator", "Admin"]
-#)
 role = st.session_state.role
 
 headers = {"X-User-ID": str(st.session_state.user_id)}
@@ -113,10 +109,6 @@ if role == "Commuter":
         if response.status_code == 200:
             #pass_types = response.json()
 
-            #for p in pass_types:
-            #    st.write(
-            #        f"{p['name']} | Price: {p['price']} | Validity: {p['validity_days']} days"
-            #    )
             pass_types = response.json()
             df = pd.DataFrame(pass_types)
 
@@ -168,7 +160,7 @@ if role == "Commuter":
         #st.json(response.json())
 
     st.subheader("Journey History")
-    # Add date filters
+    # date filters
     col1, col2 = st.columns(2)
     with col1:
         start_date = st.date_input("Start Date")
@@ -219,20 +211,26 @@ elif role == "Validator":
 
     pass_code = st.text_input("Pass Code")
 
-    # TODO: automatic add code?
-    transport_modes = {
-        "Metro": "MET",
-        "Bus": "BUS",
-        "Train": "TRN",
-        "One-way Bus": "OBUS"
-    }
+    # fetch transport modes from existing pass types
+    response = requests.get(f"{API_URL}/api/admin/pass-types",headers=headers)
+
+    pass_types = response.json()
+
+    transport_modes = set()
+
+    for p in pass_types:
+        if p["transport_modes"]:
+            modes = [m.strip() for m in p["transport_modes"].split(",")]
+            transport_modes.update(modes)
+
+    transport_modes = sorted(list(transport_modes))
 
     selected_mode = st.selectbox(
         "Transport Mode",
-        list(transport_modes.keys())
+        transport_modes
     )
 
-    transport_mode = transport_modes[selected_mode]
+    transport_mode = selected_mode
 
     route_info = st.text_input("Route Info")
 
@@ -248,10 +246,6 @@ elif role == "Validator":
             headers=headers
         )
 
-        #st.json(response.json())
-        #result = response.json()
-        st.write(response.status_code)
-        st.write(response.text)
 
         result = response.json()
 
