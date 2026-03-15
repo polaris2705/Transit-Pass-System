@@ -7,7 +7,14 @@ API_URL = "http://localhost:8000"
 if "token" not in st.session_state:
     st.session_state.token = None
 
+if "user_id" not in st.session_state:
+    st.session_state.user_id = None
+
+if "role" not in st.session_state:
+    st.session_state.role = None
+
 st.title("Digital Transit Pass System")
+
 
 if st.session_state.token is None:
 
@@ -15,6 +22,7 @@ if st.session_state.token is None:
         "Authentication",
         ["Login", "Register"]
     )
+
 
 
     # Login
@@ -39,8 +47,11 @@ if st.session_state.token is None:
 
                 data = response.json()
 
-                st.session_state.token = data["user_id"]
+                st.session_state.user_id = data["user_id"]
                 st.session_state.role = data["role"]
+
+                st.session_state.token = True
+
                 st.success("Login successful")
                 st.rerun()
 
@@ -79,7 +90,7 @@ if st.session_state.token is None:
 
     st.stop()
 
-st.title("Digital Transit Pass System")
+
 
 #role = st.sidebar.selectbox(
 #    "Select Role",
@@ -87,7 +98,7 @@ st.title("Digital Transit Pass System")
 #)
 role = st.session_state.role
 
-
+headers = {"X-User-ID": str(st.session_state.user_id)}
 
 # Commuter interface
 if role == "Commuter":
@@ -96,7 +107,7 @@ if role == "Commuter":
 
     if st.button("View Pass Types"):
 
-        response = requests.get(f"{API_URL}/api/passes/types")
+        response = requests.get(f"{API_URL}/api/passes/types",headers=headers)
 
         if response.status_code == 200:
             #pass_types = response.json()
@@ -113,31 +124,35 @@ if role == "Commuter":
     st.subheader("Purchase Pass")
 
     pass_type_id = st.number_input("Pass Type ID", min_value=1)
-    user_id = st.number_input("User ID", min_value=1)
+    #user_id = st.number_input("User ID", min_value=1)
 
     if st.button("Purchase Pass"):
 
         response = requests.post(
             f"{API_URL}/api/passes/purchase",
             json={
-                "user_id": user_id,
+                #"user_id": user_id,
                 "pass_type_id": pass_type_id
-            }
+            },
+            headers=headers
         )
 
         #st.json(response.json())
         result = response.json()
 
-        st.success("Pass Purchased Successfully")
+        if response.status_code == 200:
+            st.success("Pass Purchased Successfully")
 
-        st.write("Pass Code:", result["pass_code"])
-        st.write("Purchase Date", result["purchase_date"])
-        st.write("Expiry Date:", result["expiry_date"])
+            st.write("Pass Code:", result["pass_code"])
+            st.write("Purchase Date", result["purchase_date"])
+            st.write("Expiry Date:", result["expiry_date"])
+        else:
+            st.error(result["detail"])
 
     if st.button("View My Passes"):
 
         response = requests.get(
-            f"{API_URL}/api/passes/my-passes"
+            f"{API_URL}/api/passes/my-passes",headers=headers
         )
 
         passes = response.json()
@@ -151,7 +166,7 @@ if role == "Commuter":
     if st.button("Load Trip History"):
 
         response = requests.get(
-            f"{API_URL}/api/trips/history"
+            f"{API_URL}/api/trips/history",headers=headers
         )
 
         #st.json(response.json())
@@ -190,25 +205,33 @@ elif role == "Validator":
                 "pass_code": pass_code,
                 "transport_mode": transport_mode,
                 "route_info": route_info
-            }
+            },
+            headers=headers
         )
 
         #st.json(response.json())
+        #result = response.json()
+        st.write(response.status_code)
+        st.write(response.text)
+
         result = response.json()
 
-        if result.get("valid"):
-            st.success("Pass Valid")
+        if response.status_code == 200:
+            if result.get("valid"):
+                st.success("Pass Valid")
+            else:
+                st.error("Pass Invalid")
+
+            st.write("Message:", result.get("message"))
+            st.write("Expiry Date:", result.get("expiry_date"))
+
+            trip = result.get("trip")
+
+            if trip:
+                st.write("Transport Mode:", trip["transport_mode"])
+                st.write("Validated At:", trip["validated_at"])
         else:
-            st.error("Pass Invalid")
-
-        st.write("Message:", result.get("message"))
-        st.write("Expiry Date:", result.get("expiry_date"))
-
-        trip = result.get("trip")
-
-        if trip:
-            st.write("Transport Mode:", trip["transport_mode"])
-            st.write("Validated At:", trip["validated_at"])
+            st.error(result.get("detail"))
 
 
 
@@ -220,7 +243,7 @@ elif role == "Admin":
     if st.button("Load Statistics"):
 
         response = requests.get(
-            f"{API_URL}/api/admin/dashboard"
+            f"{API_URL}/api/admin/dashboard",headers=headers
         )
 
         data = response.json()

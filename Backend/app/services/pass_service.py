@@ -12,7 +12,7 @@ def get_pass_types(db: Session):
     return db.query(models.PassType).all()
 
 
-def purchase_pass(db: Session, request: schemas.PassPurchaseRequest):
+def purchase_pass(db: Session, request: schemas.PassPurchaseRequest, user):
 
     pass_type = db.query(models.PassType).filter(
         models.PassType.id == request.pass_type_id
@@ -28,7 +28,7 @@ def purchase_pass(db: Session, request: schemas.PassPurchaseRequest):
     pass_code = str(uuid.uuid4())
 
     new_pass = models.UserPass(
-        user_id=1,   # placeholder until authentication implemented
+        user_id=user.id,   # placeholder until authentication implemented
         pass_type_id=pass_type.id,
         pass_code=pass_code,
         purchase_date=now,
@@ -43,10 +43,10 @@ def purchase_pass(db: Session, request: schemas.PassPurchaseRequest):
     return new_pass
 
 
-def get_user_passes(db: Session):
+def get_user_passes(db: Session, user):
 
     return db.query(models.UserPass).filter(
-        models.UserPass.user_id == 1
+        models.UserPass.user_id == user.id
     ).all()
 
 

@@ -9,7 +9,7 @@ from app import models, schemas
 from app.models import UserPass
 
 
-def validate_pass(db: Session, request: schemas.TripValidationRequest):
+def validate_pass(db: Session, request: schemas.TripValidationRequest, validator):
     now = datetime.now(timezone.utc)
 
     user_pass = db.query(models.UserPass).filter(
@@ -107,7 +107,7 @@ def validate_pass(db: Session, request: schemas.TripValidationRequest):
     return {"valid": True, "message": "Pass validated","expiry_date": user_pass.expiry_date, "trip": new_trip}
 
 
-def get_trip_history(db: Session, start_date=None, end_date=None):
+def get_trip_history(db: Session, user, start_date=None, end_date=None):
 
     #return db.query(models.Trip).join(
     #    models.UserPass
@@ -120,7 +120,7 @@ def get_trip_history(db: Session, start_date=None, end_date=None):
         models.Trip.route_info,
         models.Trip.validated_at
     ).join(models.UserPass).filter(
-        models.UserPass.user_id == 1
+        models.UserPass.user_id == user.id
     )
 
     if start_date:

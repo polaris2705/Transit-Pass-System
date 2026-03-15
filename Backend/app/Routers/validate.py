@@ -12,5 +12,5 @@ router = APIRouter(prefix="/api", tags=["Validation"])
 
 @router.post("/validate", response_model=schemas.ValidationResult)
 def validate_pass(request: schemas.TripValidationRequest, db: Session = Depends(get_db), validator = Depends(require_role("Validator"))):
-    return trip_service.validate_pass(db, request)
+    return trip_service.validate_pass(db, request, validator)
 

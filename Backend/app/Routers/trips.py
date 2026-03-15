@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime
 from app.dependencies import get_db
+from app.dependencies import require_role
 from app.database import SessionLocal
 from app.services import trip_service
 from app import schemas
@@ -17,6 +18,7 @@ router = APIRouter(prefix="/api/trips", tags=["Trips"])
 def get_trip_history(
     start_date: Optional[datetime] = None,
     end_date: Optional[datetime] = None,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user = Depends(require_role("Commuter"))
 ):
-    return trip_service.get_trip_history(db, start_date, end_date)
+    return trip_service.get_trip_history(db, user, start_date, end_date)
