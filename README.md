@@ -83,7 +83,9 @@ Frontend URL: https://transit-pass-system-frontend.onrender.com/
 
 Backend URL: https://transit-pass-system.onrender.com/
 
-On Render free-tier, the backend may take a few seconds to wake if idle. Refresh the frontend if the first request fails.
+- First launch:
+On Render free-tier, the backend may take a few seconds to wake if idle. Refresh the frontend if the first few requests fails.
+If it still doesn't work, launch the backend url given above to wake the system
 
 ## Using the Deployed Application
 
