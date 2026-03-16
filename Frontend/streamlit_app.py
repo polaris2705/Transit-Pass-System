@@ -5,9 +5,11 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 
-load_dotenv()
 
-API_URL = os.getenv("API_URL", "http://localhost:8000")
+# Read from secrets.toml
+API_URL = st.secrets["API_URL"]
+
+st.write("Backend API URL:", API_URL)
 
 if "token" not in st.session_state:
     st.session_state.token = None
