@@ -1,10 +1,13 @@
 import streamlit as st
 import requests
 import pandas as pd
+import os
+from dotenv import load_dotenv
 from datetime import datetime
 
+load_dotenv()
 
-API_URL = "http://localhost:8000"
+API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 if "token" not in st.session_state:
     st.session_state.token = None

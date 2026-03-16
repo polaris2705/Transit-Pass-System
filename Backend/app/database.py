@@ -4,12 +4,12 @@
 # connect API server and database
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from dotenv import load_dotenv
-import os
+from app.config import DATABASE_URL
 
-load_dotenv()
 
-DATABASE_URL =os.getenv("DATABASE_URL")
+# super class for modeled table classes. Parent class
+Base = declarative_base()
+
 
 engine = create_engine(DATABASE_URL)
 
@@ -19,5 +19,7 @@ SessionLocal = sessionmaker(
     bind=engine
 )
 
-# super class for modeled table classes. Parent class
-Base = declarative_base()
+# Create tables if they do not exist
+def init_db():
+    #Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
