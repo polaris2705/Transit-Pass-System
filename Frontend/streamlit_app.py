@@ -5,11 +5,9 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 
+load_dotenv()
 
-# Read from secrets.toml
-API_URL = st.secrets["API_URL"]
-
-st.write("Backend API URL:", API_URL)
+API_URL = os.getenv("API_URL", "https://transit-pass-system.onrender.com")
 
 if "token" not in st.session_state:
     st.session_state.token = None
